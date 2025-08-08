@@ -91,7 +91,7 @@ public class InstallJavaVersionCommand implements Callable<Integer> {
 
         @Override
         public Integer call() throws Exception {
-            String url = "https://raw.githubusercontent.com/amankrmj01/capy/6238a3f15c24b5c075fc7b899b0145c97e85abca/.github/java_versions/java_version.json";
+            String url = "https://raw.githubusercontent.com/amankrmj01/capyverse_cli/main/.github/java_versions/java_version.json";
             JavaVersionAvailableFetchService fetchService = new JavaVersionAvailableFetchService();
             try {
                 List<OracleJavaVersionInfo> versions = fetchService.fetchOracleJavaVersions(url);
