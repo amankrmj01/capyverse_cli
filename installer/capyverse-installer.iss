@@ -23,20 +23,20 @@ Name: "addtopath"; Description: "Add CapyVerse to user PATH"; GroupDescription: 
 
 [Files]
 ; Native executable only - no JVM required!
-Source: "../build/native/nativeCompile/CapyVerse_cli.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "../build/native/nativeCompile/capy.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "app-icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\CapyVerse"; Filename: "{app}\bin\CapyVerse_cli.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"
+Name: "{group}\CapyVerse"; Filename: "{app}\bin\capy.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"
 Name: "{group}\{cm:UninstallProgram,CapyVerse}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\CapyVerse"; Filename: "{app}\bin\CapyVerse_cli.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"; Tasks: desktopicon
+Name: "{autodesktop}\CapyVerse"; Filename: "{app}\bin\capy.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"; Tasks: desktopicon
 
 [Registry]
 Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}\bin"; Tasks: addtopath; Check: NeedsAddPath('{app}\bin')
 
 [Run]
-Filename: "{app}\bin\CapyVerse_cli.exe"; Parameters: "--help"; Description: "Test CapyVerse installation"; Flags: waituntilterminated postinstall skipifsilent; WorkingDir: "{app}"
+Filename: "{app}\bin\capy.exe"; Parameters: "--help"; Description: "Test CapyVerse installation"; Flags: waituntilterminated postinstall skipifsilent; WorkingDir: "{app}"
 
 [Code]
 function NeedsAddPath(Param: string): boolean;
