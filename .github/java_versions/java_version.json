@@ -1,0 +1,32 @@
+[
+  {
+    "version": "24.0.2",
+    "description": "Latest feature release of Java SE",
+    "distribution": "Oracle No-Fee Terms and Conditions (NFTC)",
+    "url": "https://download.oracle.com/java/24/latest/"
+  },
+  {
+    "version": "21.0.8",
+    "description": "Latest Long-Term Support (LTS) release",
+    "distribution": "NFTC until Sep 2026, then Java SE OTN License",
+    "url": "https://download.oracle.com/java/21/latest/"
+  },
+  {
+    "version": "17.0.16",
+    "description": "Previous LTS release",
+    "distribution": "NFTC until Sep 2026",
+    "url": "https://download.oracle.com/java/17/latest/"
+  },
+  {
+    "version": "11.0.28",
+    "description": "Legacy LTS release",
+    "distribution": "Extended support until Jan 2032",
+    "url": "https://download.oracle.com/java/11/latest/"
+  },
+  {
+    "version": "8u461",
+    "description": "Widely used legacy LTS release",
+    "distribution": "Extended support until Dec 2030",
+    "url": "https://download.oracle.com/java/8/latest/"
+  }
+]

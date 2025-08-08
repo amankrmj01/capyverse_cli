@@ -1,0 +1,12 @@
+name: workflow-macos.yml
+on:
+  push:
+    tags:
+      - 'v4'
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: No operation
+        run: echo "No jobs"

@@ -1,0 +1,155 @@
+name: Build and Release JavaWizard
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup MSBuild (Visual Studio 2022)
+        uses: microsoft/setup-msbuild@v1.3
+
+      - name: Setup Visual Studio Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+          vsversion: '2022'
+
+      - name: Verify Java and GraalVM installation
+        run: |
+          java -version
+          native-image --version
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+        shell: bash
+
+      - name: Build JAR
+        run: ./gradlew build
+
+      - name: Build Native Executable
+        run: ./gradlew nativeCompile
+        shell: cmd
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
+
+      - name: Verify native executable
+        run: |
+          if (Test-Path "build\native\nativeCompile\javawizard.exe") {
+            Write-Host "Native executable created successfully"
+            & "build\native\nativeCompile\javawizard.exe" --version
+          } else {
+            Write-Host "Native executable not found"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Create Installer with Inno Setup
+        run: |
+          # Add Inno Setup to PATH and compile
+          $env:PATH += ";C:\Program Files (x86)\Inno Setup 6"
+          iscc.exe "xwizard-installer.iss"
+        shell: powershell
+
+      - name: Verify installer creation
+        run: |
+          if (Test-Path "installer\JavaWizard-Native-Setup-*.exe") {
+            Write-Host "Installer created successfully"
+            Get-ChildItem -Path "installer" -Filter "*.exe" | ForEach-Object {
+              Write-Host "Created: $($_.Name) (Size: $([math]::Round($_.Length/1MB, 2)) MB)"
+            }
+          } else {
+            Write-Host "Installer not found"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "VERSION_TAG=${{ github.ref_name }}" >> $env:GITHUB_OUTPUT
+        shell: powershell
+
+      - name: Rename installer with version
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $oldName = "installer\JavaWizard-Native-Setup-1.0.0.exe"
+          $newName = "installer\JavaWizard_v$version.exe"
+          
+          if (Test-Path $oldName) {
+            Rename-Item -Path $oldName -NewName (Split-Path $newName -Leaf)
+            Write-Host "Renamed installer to: JavaWizard_v$version.exe"
+          } else {
+            Write-Host "Original installer not found at: $oldName"
+            Get-ChildItem -Path "installer" -Filter "*.exe"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: JavaWizard-Windows-v${{ steps.version.outputs.VERSION }}
+          path: |
+            build/native/nativeCompile/javawizard.exe
+            installer/*.exe
+            build/libs/*.jar
+          retention-days: 30
+
+      - name: Read CHANGELOG.md
+        id: changelog
+        run: |
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          cat CHANGELOG.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION_TAG }}
+          name: JavaWizard v${{ steps.version.outputs.VERSION }}
+          body: ${{ env.RELEASE_NOTES }}
+          files: |
+            installer/JavaWizard_v${{ steps.version.outputs.VERSION }}.exe
+          draft: false
+          prerelease: false
+
+      - name: Summary
+        run: |
+          Write-Host "Build and Release Completed Successfully!"
+          Write-Host "Release: ${{ steps.version.outputs.VERSION_TAG }}"
+          Write-Host "Installer: JavaWizard_v${{ steps.version.outputs.VERSION }}.exe"
+        shell: powershell
