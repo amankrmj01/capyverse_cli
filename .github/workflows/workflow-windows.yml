@@ -129,9 +129,11 @@ jobs:
       - name: Read CHANGELOG.md
         id: changelog
         run: |
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
-          cat CHANGELOG.md >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          echo "RELEASE_NOTES=$(Get-Content CHANGELOG.md -Raw)" >> $env:GITHUB_ENV
+          # or for multi-line:
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_NOTES<<EOF"
+          Get-Content CHANGELOG.md | Add-Content -Path $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "EOF"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
