@@ -128,9 +128,8 @@ jobs:
 
       - name: Read CHANGELOG.md
         id: changelog
+        shell: pwsh
         run: |
-          echo "RELEASE_NOTES=$(Get-Content CHANGELOG.md -Raw)" >> $env:GITHUB_ENV
-          # or for multi-line:
           Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_NOTES<<EOF"
           Get-Content CHANGELOG.md | Add-Content -Path $env:GITHUB_ENV
           Add-Content -Path $env:GITHUB_ENV -Value "EOF"
