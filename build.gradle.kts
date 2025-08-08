@@ -35,7 +35,7 @@ application {
 graalvmNative {
     binaries {
         named("main") {
-            imageName.set("capyverse_cli")
+            imageName.set("capy")
             mainClass.set("com.amankrmj.capyverse.Main")
             useFatJar.set(true)
             
