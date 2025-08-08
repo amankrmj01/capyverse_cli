@@ -73,15 +73,11 @@ jobs:
           }
         shell: powershell
 
-      - name: Install Inno Setup
-        run: choco install innosetup --yes
-        shell: powershell
-
       - name: Create Installer with Inno Setup
         run: |
           # Add Inno Setup to PATH and compile
           $env:PATH += ";C:\Program Files (x86)\Inno Setup 6"
-          iscc.exe "xwizard-installer.iss"
+          iscc.exe "capyverse-installer.iss"
         shell: powershell
 
       - name: Verify installer creation
