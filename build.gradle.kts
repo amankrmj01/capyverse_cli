@@ -81,7 +81,7 @@ tasks.register<Copy>("nativeInstallDist") {
     description = "Creates a distribution with the native executable"
     
     from("build/native/nativeCompile") {
-        include("capyverse.exe")
+        include("capy.exe")
         into("bin")
     }
     
