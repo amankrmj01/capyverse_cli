@@ -73,6 +73,15 @@ jobs:
           }
         shell: powershell
 
+      - name: Debug Inno Setup installation directory
+        run: |
+          Write-Host "Listing files in C:\Program Files (x86)\Inno Setup 6"
+          Get-ChildItem "C:\Program Files (x86)\Inno Setup 6" | ForEach-Object {
+            Write-Host $_.Name
+          }
+        shell: powershell
+
+
       - name: Create Installer with Inno Setup
         run: |
           # Add Inno Setup to PATH and compile
