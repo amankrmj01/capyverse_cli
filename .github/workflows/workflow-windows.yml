@@ -1,4 +1,4 @@
-name: Build and Release JavaWizard
+name: Build and Release CapyVerse CLI for Windows
 
 on:
   push:
@@ -64,9 +64,9 @@ jobs:
 
       - name: Verify native executable
         run: |
-          if (Test-Path "build\native\nativeCompile\javawizard.exe") {
+          if (Test-Path "build\native\nativeCompile\capy.exe") {
             Write-Host "Native executable created successfully"
-            & "build\native\nativeCompile\javawizard.exe" --version
+            & "build\native\nativeCompile\capy.exe" --version
           } else {
             Write-Host "Native executable not found"
             exit 1
@@ -82,7 +82,7 @@ jobs:
 
       - name: Verify installer creation
         run: |
-          if (Test-Path "installer\JavaWizard-Native-Setup-*.exe") {
+          if (Test-Path "installer\CapyVerse-Native-Setup-*.exe") {
             Write-Host "Installer created successfully"
             Get-ChildItem -Path "installer" -Filter "*.exe" | ForEach-Object {
               Write-Host "Created: $($_.Name) (Size: $([math]::Round($_.Length/1MB, 2)) MB)"
@@ -104,12 +104,12 @@ jobs:
       - name: Rename installer with version
         run: |
           $version = "${{ steps.version.outputs.VERSION }}"
-          $oldName = "installer\JavaWizard-Native-Setup-1.0.0.exe"
-          $newName = "installer\JavaWizard_v$version.exe"
+          $oldName = "installer\CapyVerse-Native-Setup-1.0.0.exe"
+          $newName = "installer\CapyVerse_v$version.exe"
           
           if (Test-Path $oldName) {
             Rename-Item -Path $oldName -NewName (Split-Path $newName -Leaf)
-            Write-Host "Renamed installer to: JavaWizard_v$version.exe"
+            Write-Host "Renamed installer to: CapyVerse_v$version.exe"
           } else {
             Write-Host "Original installer not found at: $oldName"
             Get-ChildItem -Path "installer" -Filter "*.exe"
@@ -120,9 +120,9 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: JavaWizard-Windows-v${{ steps.version.outputs.VERSION }}
+          name: CapyVerse-Windows-v${{ steps.version.outputs.VERSION }}
           path: |
-            build/native/nativeCompile/javawizard.exe
+            build/native/nativeCompile/capy.exe
             installer/*.exe
             build/libs/*.jar
           retention-days: 30
@@ -140,10 +140,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.VERSION_TAG }}
-          name: JavaWizard v${{ steps.version.outputs.VERSION }}
+          name: CapyVesre v${{ steps.version.outputs.VERSION }}
           body: ${{ env.RELEASE_NOTES }}
           files: |
-            installer/JavaWizard_v${{ steps.version.outputs.VERSION }}.exe
+            installer/CapyVerse_v${{ steps.version.outputs.VERSION }}.exe
           draft: false
           prerelease: false
 
@@ -151,5 +151,5 @@ jobs:
         run: |
           Write-Host "Build and Release Completed Successfully!"
           Write-Host "Release: ${{ steps.version.outputs.VERSION_TAG }}"
-          Write-Host "Installer: JavaWizard_v${{ steps.version.outputs.VERSION }}.exe"
+          Write-Host "Installer: CapyVerse_v${{ steps.version.outputs.VERSION }}.exe"
         shell: powershell
