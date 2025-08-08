@@ -73,21 +73,11 @@ jobs:
           }
         shell: powershell
 
-      - name: Debug Inno Setup installation directory
-        run: |
-          Write-Host "Listing files in C:\Program Files (x86)\Inno Setup 6"
-          Get-ChildItem "C:\Program Files (x86)\Inno Setup 6" | ForEach-Object {
-            Write-Host $_.Name
-          }
-        shell: powershell
-
-
       - name: Create Installer with Inno Setup
         run: |
-          # Add Inno Setup to PATH and compile
-          $env:PATH += ";C:\Program Files (x86)\Inno Setup 6"
-          iscc.exe "capyverse-installer.iss"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\capyverse-installer.iss"
         shell: powershell
+        working-directory: ${{ github.workspace }}
 
       - name: Verify installer creation
         run: |
