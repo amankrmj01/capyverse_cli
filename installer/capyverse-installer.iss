@@ -24,8 +24,8 @@ Name: "addtopath"; Description: "Add CapyVerse to user PATH"; GroupDescription: 
 [Files]
 ; Native executable only - no JVM required!
 Source: "../build/native/nativeCompile/capy.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
-Source: "../build/native/nativeCompile/app-icon.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "../build/native/nativeCompile/LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../installer/app-icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../installer/LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\CapyVerse"; Filename: "{app}\bin\capy.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"
