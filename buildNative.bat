@@ -2,8 +2,8 @@
 setlocal enabledelayedexpansion
 
 :: === CONFIGURATION ===
-set JAR_PATH=build\libs\xwizard_cli-1.0.0.jar
-set OUTPUT_NAME=xwizard
+set JAR_PATH=build\libs\capyverse_cli-1.0.0.jar
+set OUTPUT_NAME=capyverse
 set GRAALVM_BIN=C:\Users\amank\dev_mode\graalvm_21\bin
 set VS_DEV_CMD="C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
 
