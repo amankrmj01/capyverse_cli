@@ -1,104 +1,90 @@
 package com.amankrmj.capyverse.java;
 
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.concurrent.Callable;
 
 @Command(name = "list", description = "List all installed Java versions")
 public class ListJavaVersionsCommand implements Callable<Integer> {
+    private List<String> versionsInstalled = new ArrayList<>();
+
+    @Option(names = {"-i"}, description = "List managed Java versions from server")
+    private boolean showManaged = false;
+
+    private void populateInstalledVersions() {
+        versionsInstalled.clear();
+        String userProfile = System.getenv("USERPROFILE");
+        File javaDir = new File(userProfile + "\\AppData\\Local\\capyverse\\lang\\java");
+        File[] folders = javaDir.listFiles(File::isDirectory);
+        if (folders != null && folders.length > 0) {
+            for (File folder : folders) {
+                String name = folder.getName();
+                int dashIdx = name.indexOf('-');
+                if (dashIdx != -1 && dashIdx < name.length() - 1) {
+                    String version = name.substring(dashIdx + 1);
+                    versionsInstalled.add(version.trim());
+                }
+            }
+        }
+    }
+
+    private void listLocalJavaVersions() {
+        populateInstalledVersions();
+        if (versionsInstalled.size() > 0) {
+            System.out.println("=== Locally Installed Java Versions ===");
+            String GREEN = "\u001B[32m";
+            String RESET = "\u001B[0m";
+            for (String version : versionsInstalled) {
+                System.out.println(GREEN + "\t\t" + version + RESET);
+            }
+        } else {
+            System.out.println("No local Java versions found.");
+        }
+    }
+
+    private void listManagedVersions() throws Exception {
+        String urlStr = "http://localhost:8080/javaversions/versions";
+        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+        conn.setRequestMethod("GET");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            String[] versions = response.toString().split(";");
+            for (String version : versions) {
+                if (versionsInstalled.contains(version.trim())) {
+                    System.out.println("\u001B[32m" + "\t\t" + version.trim() + " - installed" + "\u001B[0m");
+                } else if (!version.trim().isEmpty()) {
+                    System.out.println("\u001B[34m" + "\t\t" + version.trim() + "\u001B[0m");
+                }
+            }
+        }
+    }
 
     @Override
     public Integer call() {
         try {
-            System.out.println("=== Managed Java Versions ===");
-            listManagedVersions();
+            if (showManaged) {
+                populateInstalledVersions();
+                System.out.println("=== Managed Java Versions ===");
+                listManagedVersions();
+            } else {
+                listLocalJavaVersions();
+            }
             return 0;
         } catch (Exception e) {
             System.err.println("Error listing Java versions: " + e.getMessage());
             return 1;
-        }
-    }
-
-    private void listManagedVersions() throws IOException {
-        Path javaVersionsDir = JavaVersionManagerUtils.getJavaVersionsDirectory();
-        if (!Files.exists(javaVersionsDir)) {
-            System.out.println("No managed Java versions found.");
-            System.out.println("Use 'capyverse java install <version>' to install Java versions.");
-            return;
-        }
-
-        String currentVersion = JavaVersionManagerUtils.getCurrentJavaVersion();
-
-        Files.list(javaVersionsDir)
-                .filter(Files::isDirectory)
-                .map(path -> path.getFileName().toString())
-                .sorted()
-                .forEach(version -> {
-                    String marker = version.equals(currentVersion) ? " (current)" : "";
-                    System.out.println("  " + version + marker);
-                });
-    }
-
-    private void findAllJavaInstallations() {
-        // Common Java installation paths
-        String[] commonPaths = {
-                "C:\\Program Files\\Java",
-                "C:\\Program Files (x86)\\Java",
-                "C:\\Program Files\\Eclipse Adoptium",
-                "C:\\Program Files\\Microsoft",
-                System.getProperty("user.home") + "\\.jdks"
-        };
-
-        System.out.println("Scanning common installation directories...");
-
-        for (String basePath : commonPaths) {
-            File baseDir = new File(basePath);
-            if (baseDir.exists() && baseDir.isDirectory()) {
-                System.out.println("\n" + basePath + ":");
-                File[] javaInstalls = baseDir.listFiles(File::isDirectory);
-                if (javaInstalls != null) {
-                    for (File install : javaInstalls) {
-                        String version = detectJavaVersion(install);
-                        System.out.println("  " + install.getName() + " " + version);
-                    }
-                }
-            }
-        }
-
-        // Also check JAVA_HOME
-        String javaHome = System.getenv("JAVA_HOME");
-        if (javaHome != null) {
-            System.out.println("\nJAVA_HOME: " + javaHome);
-            System.out.println("  Version: " + detectJavaVersion(new File(javaHome)));
-        }
-    }
-
-    private String detectJavaVersion(File javaHome) {
-        try {
-            File javaBin = new File(javaHome, "bin/java.exe");
-            if (!javaBin.exists()) {
-                javaBin = new File(javaHome, "bin/java");
-            }
-
-            if (javaBin.exists()) {
-                ProcessBuilder pb = new ProcessBuilder(javaBin.getAbsolutePath(), "-version");
-                Process process = pb.start();
-                String output = new String(process.getErrorStream().readAllBytes());
-                process.waitFor();
-
-                // Parse version from output
-                String[] lines = output.split("\n");
-                if (lines.length > 0) {
-                    return lines[0].replaceAll(".*\"(.*)\".*", "($1)");
-                }
-            }
-            return "(unknown)";
-        } catch (Exception e) {
-            return "(error: " + e.getMessage() + ")";
         }
     }
 }

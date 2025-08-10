@@ -11,7 +11,8 @@ import java.util.concurrent.Callable;
                 InstallJavaVersionCommand.class,
                 UseJavaVersionCommand.class,
                 CurrentJavaVersionCommand.class,
-                WhichJavaVersionCommand.class
+                WhichJavaVersionCommand.class,
+                SetJavaVersion.class
         })
 public class JavaVersionManagerCommand implements Callable<Integer> {
 
