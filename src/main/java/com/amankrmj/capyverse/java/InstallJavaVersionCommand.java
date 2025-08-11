@@ -1,17 +1,13 @@
 package com.amankrmj.capyverse.java;
 
+import com.amankrmj.capyverse.java.services.JavaDownloadService;
+import com.amankrmj.capyverse.java.services.JavaVersionFetchService;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.io.*;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.concurrent.Callable;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * Downloads, installs, and configures a Java JDK for Capyverse usage.
@@ -21,7 +17,7 @@ import java.util.zip.ZipInputStream;
         description = "Install a specific Java version."
 )
 public class InstallJavaVersionCommand implements Callable<Integer> {
-
+    private JavaVersionFetchService versionFetchService;
     @Option(
             names = {"-v"},
             description = "Download and install Oracle JDK exe for the specified version"
@@ -44,38 +40,16 @@ public class InstallJavaVersionCommand implements Callable<Integer> {
         return 1;
     }
 
-    /**
-     * Gets the JDK download URL for the given version from the local server.
-     */
-    private String fetchJdkUrlFromServer(String version) {
-        try {
-            String endpoint = "http://localhost:8080/javaversions?version=" + version;
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                return response.body().trim(); // plain URL string
-            } else {
-                System.err.println("Failed to fetch JDK URL. Status: " + response.statusCode());
-            }
-        } catch (Exception e) {
-            System.err.println("Error fetching JDK URL: " + e.getMessage());
-        }
-        return null;
-    }
 
     private Integer installJavaVersion(String version) {
         final String userProfile = System.getenv("USERPROFILE");
-        // Get the download URL from the local server
-        String zipUrl = fetchJdkUrlFromServer(version);
+        // Get the download URL from the local server using service
+        versionFetchService = new JavaVersionFetchService();
+        String zipUrl = versionFetchService.getDownloadUrl(version);
         if (zipUrl == null || zipUrl.isEmpty()) {
             System.err.println("Could not get JDK download URL for version: " + version);
             return 1;
         }
-        // Note: You can generalize the URLs and file-version logic as needed.
         final String targetDir = userProfile + "\\AppData\\Local\\capyverse\\cache\\java\\downloads";
         final String targetFile = targetDir + "\\jdk-" + version + ".zip";
         final String installDir = userProfile + "\\AppData\\Local\\capyverse\\lang\\java";
@@ -88,16 +62,23 @@ public class InstallJavaVersionCommand implements Callable<Integer> {
         new File(wrapperDir).mkdirs();
 
         try {
-            System.out.println("⬇️  Downloading Java JDK...");
-            downloadFileWithBar(zipUrl, targetFile);
+            // Print download start with Unicode fallback
+            String downloadMsg = "\u2B07\uFE0F  Downloading Java JDK..."; // Unicode for ⬇️
+            try {
+                System.out.println(downloadMsg);
+            } catch (Exception e) {
+                System.out.println("Downloading Java JDK...");
+            }
+            JavaDownloadService downloadService = new JavaDownloadService(zipUrl, targetDir, installDir, "jdk-" + version + ".zip");
+            downloadService.download();
 
             System.out.println("🗜️  Extracting...");
-            unzip(targetFile, installDir);
+            downloadService.unzipFile();
 
             // Write configuration file
             File configFile = new File(installDir, "java_config.txt");
             if (configFile.exists()) {
-                System.out.println("ℹ️  Config file already exists: " + configFile.getAbsolutePath());
+                System.out.println("\u2B07\uFE0F  Config file already exists: " + configFile.getAbsolutePath());
             } else {
                 writeJavaConfig(configFile, binPath);
             }
@@ -105,106 +86,17 @@ public class InstallJavaVersionCommand implements Callable<Integer> {
             // Generate batch setup script
             File setupCmdFile = new File(installDir, "setup_java.cmd");
             if (setupCmdFile.exists()) {
-                System.out.println("ℹ️  Batch setup script already exists: " + setupCmdFile.getAbsolutePath());
+                System.out.println("\u2B07\uFE0F  Batch setup script already exists: " + setupCmdFile.getAbsolutePath());
             } else {
                 writeSetupCmd(setupCmdFile, binPath);
             }
 
-            // Generate launch wrappers in wrapperDir
-//            generateJavaToolWrappers(binPath, wrapperDir);
-
-
-            System.out.println("✅ Java installed successfully!");
+            System.out.println("\u2705 Java installed successfully!");
             return 0;
 
         } catch (Exception e) {
             System.err.println("🔴 Installation failed: " + e.getMessage());
             return 1;
-        }
-    }
-
-    /**
-     * Downloads a file from a given URL, saving it at filePath, with progress bar.
-     */
-    private void downloadFileWithBar(String urlStr, String filePath) throws IOException, InterruptedException {
-        // Use HttpClient for better reliability and compatibility
-        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
-        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create(urlStr))
-                .GET()
-                .build();
-        java.net.http.HttpResponse<InputStream> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
-        int fileSize = 0;
-        if (response.headers().firstValue("Content-Length").isPresent()) {
-            try {
-                fileSize = Integer.parseInt(response.headers().firstValue("Content-Length").get());
-            } catch (NumberFormatException ignored) {
-            }
-        }
-        InputStream in = response.body();
-        try (FileOutputStream out = new FileOutputStream(filePath)) {
-            byte[] buffer = new byte[8192];
-            int totalRead = 0, lastPercent = -1;
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-                totalRead += bytesRead;
-                if (fileSize > 0) {
-                    int percent = (int) ((totalRead * 100L) / fileSize);
-                    if (percent != lastPercent) {
-                        printProgressBar(percent);
-                        lastPercent = percent;
-                    }
-                }
-            }
-            printProgressBar(100);
-            System.out.println();
-        } finally {
-            in.close();
-        }
-    }
-
-    private void printProgressBar(int percent) {
-        final int barLength = 50;
-        int filled = (percent * barLength) / 100;
-        System.out.print("\r[");
-        String GREEN = "\u001B[32m";
-        String RED = "\u001B[31m";
-        String YELLOW = "\u001B[33m";
-        String RESET = "\u001B[0m";
-        for (int i = 0; i < barLength; i++) {
-            if (i < filled) {
-                System.out.print(GREEN + "=" + RESET);
-            } else {
-                System.out.print(RED + "-" + RESET);
-            }
-        }
-        System.out.print("] ");
-        System.out.print(YELLOW + percent + "%" + RESET);
-    }
-
-    /**
-     * Unzips an archive into a target directory.
-     * Strips leading folder if needed.
-     */
-    private void unzip(String zipFilePath, String destDir) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFilePath))) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                File outFile = new File(destDir, entry.getName());
-                if (entry.isDirectory()) {
-                    outFile.mkdirs();
-                } else {
-                    outFile.getParentFile().mkdirs();
-                    try (FileOutputStream fos = new FileOutputStream(outFile)) {
-                        byte[] buffer = new byte[8192];
-                        int len;
-                        while ((len = zis.read(buffer)) > 0) {
-                            fos.write(buffer, 0, len);
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -276,22 +168,4 @@ public class InstallJavaVersionCommand implements Callable<Integer> {
         System.out.println("⚙️  Wrote batch script: " + scriptFile.getAbsolutePath());
     }
 
-//    private void generateJavaToolWrappers(String binPath, String wrapperDir) {
-//        File binFolder = new File(binPath);
-//        File[] exeFiles = binFolder.listFiles((dir, name) -> name.endsWith(".exe"));
-//        if (exeFiles == null) return;
-//
-//        for (File exe : exeFiles) {
-//            String toolName = exe.getName().replaceFirst("\\.exe$", "");
-//            File wrapper = new File(wrapperDir, toolName + ".cmd");
-//            try (PrintWriter pw = new PrintWriter(wrapper, "UTF-8")) {
-//                pw.println("@echo off");
-//                pw.println("\"" + exe.getAbsolutePath() + "\" %*");
-//            } catch (Exception e) {
-//                System.err.printf("Failed to create wrapper for %s: %s%n", exe.getName(), e.getMessage());
-//            }
-//            System.out.println("✅ Created wrapper: " + wrapper.getAbsolutePath());
-//        }
-//        System.out.println("🔗 All Java tool wrappers created in: " + wrapperDir);
-//    }
 }
