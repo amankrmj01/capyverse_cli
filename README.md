@@ -1,4 +1,4 @@
-# 🧙‍♂️ CapyVerse
+# 🦫 CapyVerse
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.java.net/projects/jdk/21/)
 [![GraalVM](https://img.shields.io/badge/GraalVM-Native-blue.svg)](https://www.graalvm.org/)
@@ -6,7 +6,8 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
 
-**CapyVerse** is a powerful command-line tool for Java version management that runs natively on Windows, Linux, and macOS
+**CapyVerse** is a powerful command-line tool for Java version management that runs natively on Windows, Linux, and
+macOS
 without requiring JVM, JDK, or any external dependencies to be pre-installed.
 
 ## 📚 Table of Contents
@@ -85,8 +86,8 @@ capy path show
 
 ### Commands
 
-| Command                          | Description                        |
-|----------------------------------|------------------------------------|
+| Command                       | Description                        |
+|-------------------------------|------------------------------------|
 | `capy java list`              | List all available Java versions   |
 | `capy java install <version>` | Install a specific Java version    |
 | `capy java global <version>`  | Set global Java version            |
@@ -255,7 +256,8 @@ The **CC BY-NC 4.0** license allows you to:
 - ❌ **NonCommercial**: You may not use the material for commercial purposes
 - ✅ **No Additional Restrictions**: The licensor cannot revoke these freedoms as long as you follow the license terms
 
-This license ensures that CapyVerse remains freely available for educational, research, and personal use while protecting
+This license ensures that CapyVerse remains freely available for educational, research, and personal use while
+protecting
 against unauthorized commercial exploitation.
 
 ## 🙏 Acknowledgments
